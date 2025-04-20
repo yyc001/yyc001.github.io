@@ -1,4 +1,4 @@
-baseURL: https://example.org/
-languageCode: en-us
-title: My New Hugo Site
+baseURL: https://yyc001.github.io/
+languageCode: zh-cn
+title: Rainie Forever's Blog
 theme: ["PaperMod"]
