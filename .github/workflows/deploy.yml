@@ -11,20 +11,24 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
+        with:
+          submodules: recursive  # 确保克隆子模块（主题）
 
       - name: Setup Hugo
         uses: peaceiris/actions-hugo@v2
         with:
           hugo-version: 'latest'
+          extended: true  # 使用扩展版 Hugo 以支持更多功能
 
       - name: Build
-        run: hugo build --minify
+        run: hugo --minify --destination ./public
 
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./public
+          publish_branch: gh-pages  # 明确指定部署分支
 
 
 
