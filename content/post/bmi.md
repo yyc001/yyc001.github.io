@@ -1,6 +1,6 @@
 ---
-title: '{{ replace .Name "-" " " | title }}'
-date: {{ .Date }}
+title: 'Bmi'
+date: 2025-04-21T00:07:07+08:00
 draft: true
 tags: []
 categories: []
@@ -21,7 +21,7 @@ ShowRssButtonInSectionTermList: true
 UseHugoToc: true
 ---
 
-## {{ replace .Name "-" " " | title }}
+## Bmi
 
 ### Subtitle
 
