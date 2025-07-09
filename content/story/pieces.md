@@ -6,7 +6,7 @@ title: '以片段串起的故事 其一'
 date: 2025-07-10T00:19:10+08:00
 
 # 是否为草稿，true表示不会发布，false表示会发布
-draft: true
+draft: false
 
 # 文章标签，用于分类和搜索
 tags: ["story"]
