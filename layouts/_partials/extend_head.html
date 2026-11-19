@@ -1,0 +1,20 @@
+{{- if .Param "math" }}
+{{- /*
+  数学公式支持：仅当文章 front matter 里写了 math: true 时才加载 KaTeX。
+  公式源码由 hugo.yaml 里的 goldmark passthrough 扩展原样透传到这里，
+  再由 KaTeX 的 auto-render 在浏览器里转成真正的公式。
+  注意：KaTeX 的 auto-render 默认不认单个 $，必须在这里显式声明。
+*/}}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.19.1/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.19.1/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.19.1/dist/contrib/auto-render.min.js"
+        onload="if (typeof renderMathInElement === 'function') { renderMathInElement(document.body, {
+          delimiters: [
+            { left: '$$', right: '$$', display: true },
+            { left: '\\[', right: '\\]', display: true },
+            { left: '\\(', right: '\\)', display: false },
+            { left: '$', right: '$', display: false }
+          ],
+          throwOnError: false
+        }); }"></script>
+{{- end }}

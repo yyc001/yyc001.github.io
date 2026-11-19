@@ -2,3 +2,20 @@ baseURL: https://yyc001.github.io/
 languageCode: zh-cn
 title: Rainie Forever's Blog
 theme: ["PaperMod"]
+
+# Markdown 渲染设置
+markup:
+  goldmark:
+    extensions:
+      passthrough:
+        # 开启后，$...$ / $$...$$ / \(...\) / \[...\] 之间的内容会原样透传，
+        # 不会被 Markdown 语法解析破坏（如 * 变斜体、\% 丢反斜杠），
+        # 再由前端 KaTeX 负责真正渲染成公式。
+        enable: true
+        delimiters:
+          inline:
+            - ['$', '$']
+            - ['\(', '\)']
+          block:
+            - ['$$', '$$']
+            - ['\[', '\]']
