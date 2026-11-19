@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="360" viewBox="0 0 1200 360" role="img" aria-label="Markdown 与 LaTeX 渲染测试">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0f172a"/>
+      <stop offset="1" stop-color="#1e3a5f"/>
+    </linearGradient>
+    <linearGradient id="bar" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#38bdf8"/>
+      <stop offset="1" stop-color="#a78bfa"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="360" fill="url(#bg)"/>
+  <rect x="72" y="96" width="8" height="152" rx="4" fill="url(#bar)"/>
+  <text x="112" y="150" font-family="Segoe UI, Microsoft YaHei, PingFang SC, sans-serif" font-size="52" font-weight="600" fill="#f8fafc">Markdown × LaTeX</text>
+  <text x="112" y="204" font-family="Segoe UI, Microsoft YaHei, PingFang SC, sans-serif" font-size="28" fill="#cbd5e1">渲染效果自检 / Rendering Self-Check</text>
+  <text x="112" y="262" font-family="Cascadia Code, Consolas, monospace" font-size="20" fill="#7dd3fc">goldmark passthrough  +  KaTeX 0.19.1</text>
+  <circle cx="1080" cy="88" r="6" fill="#38bdf8" opacity="0.7"/>
+  <circle cx="1112" cy="120" r="4" fill="#a78bfa" opacity="0.6"/>
+  <circle cx="1050" cy="126" r="3" fill="#f8fafc" opacity="0.4"/>
+</svg>
