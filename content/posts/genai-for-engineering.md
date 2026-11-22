@@ -100,8 +100,17 @@ Git 对 AI agent 为主体的开发模式并不友好，已经成为业界的共
 Scion
 : [Anthropic 26年10月份的post](https://www.anthropic.com/research/redesigning-source-control)，抛弃了 Git 自建的版本控制软件。基本不具备通用性
 
+### Spec-driven Development
+
+因为代码是golden truth，doc是代码在一个方向上的投影
+sdd到最后你一定不会验doc的，这里就有语义漂移
+我现在搞大项目，做到后面就把doc删了，缩成随代码附赠的可数个可独立验证的自然语言断言
+因为doc随时可以regenerate，这些断言才反映你本来的开发意图
+
 
 ### Overfitting
+
+人和 AI 并没有本质上的不同
 
 Agent 表现出的奇怪行为，过拟合的结果。
 
