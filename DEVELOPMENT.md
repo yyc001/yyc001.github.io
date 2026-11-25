@@ -2,7 +2,7 @@
 
 > 这份备忘的目标：换一台机器 / 隔半年回来，也能在 5 分钟内把站点跑起来，并且避开已经踩过的坑。
 >
-> 记录时的环境：`Hugo 0.170.1 (extended)` + `PaperMod 1181196` · Windows + PowerShell · 2026-11-19
+> 记录时的环境：`Hugo 0.170.1`（0.170 起已无 extended 版）+ `PaperMod 1181196` · Windows + PowerShell（2026-11-19）· macOS arm64 + zsh（2026-11-20）
 
 ---
 
@@ -31,7 +31,7 @@ yyc001.github.io/
 │   └── extend_head.html           # 站点级覆盖：按需注入 KaTeX
 ├── themes/PaperMod/               # 主题（submodule，只读，别直接改）
 ├── .tools/                        # 本地工具链，gitignore 掉
-│   ├── hugo/hugo.exe              # Hugo 没有装进系统 PATH
+│   ├── hugo/hugo.exe | hugo       # Hugo 二进制（Windows 带 .exe / macOS 无后缀），不进 PATH
 │   └── hugo-cache/                # Hugo 缓存（沙箱要求放这里）
 ├── hugo.yaml                      # 唯一配置：baseURL / 标题 / markdown 公式透传
 └── public/                        # 构建输出，gitignore
@@ -41,11 +41,13 @@ yyc001.github.io/
 
 ## 2. 环境准备
 
-### 2.1 Hugo（必须是 extended 版）
+### 2.1 Hugo
 
-CI 用的是 `extended: true`，本地请保持一致，否则 SCSS / 图片处理会报错。
+> **0.170 起没有 extended 版了**：官方只发一个二进制（已含 WebP / AVIF），LibSass 被移除，SCSS 改由外部 Dart Sass 编译（见 §2.3）。CI 里的 `extended: true` 目前靠官方保留的 `hugo_extended_*` 兼容别名生效。
 
-本机装法是**便携式**的，没有进 PATH：
+本机装法是**便携式**的，没有进 PATH。
+
+#### Windows
 
 ```powershell
 .tools\hugo\hugo.exe version
@@ -57,13 +59,36 @@ CI 用的是 `extended: true`，本地请保持一致，否则 SCSS / 图片处�
 ```powershell
 # 版本号换成当前最新：https://github.com/gohugoio/hugo/releases
 $ver = '0.170.1'
-$url = "https://github.com/gohugoio/hugo/releases/download/v$ver/hugo_extended_${ver}_windows-amd64.zip"
+$url = "https://github.com/gohugoio/hugo/releases/download/v$ver/hugo_${ver}_windows-amd64.zip"
 # 用 Node 下载（见 §7 坑 7：PowerShell 自带的下载在这里会失败）
 node -e "const fs=require('fs');fetch(process.argv[1]).then(r=>r.arrayBuffer()).then(b=>fs.writeFileSync('hugo.zip',Buffer.from(b)))" $url
 Expand-Archive hugo.zip -DestinationPath .tools\hugo -Force
 ```
 
-> 想偷懒装系统级也可以：`winget install Hugo.Hugo.Extended`。装完 `hugo` 直接在 PATH 里，下面命令里的 `.\.tools\hugo\hugo.exe` 换成 `hugo` 即可。
+> 想装系统级也可以：用 `winget search hugo` 查到 id 后安装，然后下面命令里的 `.\.tools\hugo\hugo.exe` 换成 `hugo`。
+
+#### macOS（arm64，无需 Homebrew）
+
+官方 macOS 产物只有一个 `.pkg`（universal）。不需要 sudo 安装到系统，解开取出二进制即可：
+
+```zsh
+mkdir -p .tools/hugo .tools/hugo-cache
+ver=0.170.1
+# 本机 github.com 直连超时（api.github.com 正常），走加速代理；下完必须校验
+curl -sSL -o .tools/hugo.pkg \
+  "https://ghfast.top/https://github.com/gohugoio/hugo/releases/download/v${ver}/hugo_${ver}_darwin-universal.pkg"
+shasum -a 256 .tools/hugo.pkg   # 0.170.1 应为 f7672f5e47f13c488ecd9ae96450ed9d2044629d60fe23570312e896c1918d73
+pkgutil --expand-full .tools/hugo.pkg .tools/hugo-expanded
+install -m 755 .tools/hugo-expanded/Payload/hugo .tools/hugo/hugo
+xattr -d com.apple.quarantine .tools/hugo/hugo 2>/dev/null   # 浏览器下的包需要，curl 下的不需要
+rm -rf .tools/hugo.pkg .tools/hugo-expanded                    # 约 80MB 临时文件
+.tools/hugo/hugo version
+# hugo v0.170.1-... darwin/arm64 BuildDate=... VendorInfo=gohugoio
+```
+
+> `hugo version` 不带 `+extended` 是正常的（§7 坑 10）；`hugo env` 里出现 `libwebp` / `libavif` 就说明图片处理能力齐全。
+>
+> 装了 Homebrew 的机器可以直接 `brew install hugo`，下文命令里的 `.tools/hugo/hugo` 换成 `hugo` 即可（本机没有 brew）。
 
 ### 2.2 主题子模块
 
@@ -87,6 +112,30 @@ git -C themes/PaperMod checkout <gitlink记录的commit>
 git ls-tree HEAD themes/PaperMod
 ```
 
+> macOS 上去掉 `.\` / `&` 前缀即可。若 `github.com` 不通导致 clone 失败（§7 坑 9），可以走 `codeload.github.com`（本机可达）：
+>
+> ```zsh
+> curl -sSL https://codeload.github.com/adityatelange/hugo-PaperMod/tar.gz/118119693d8b5ac211b939775678310973bcb232 \
+>   | tar -xz -C themes/PaperMod --strip-components=1
+> ```
+>
+> 本机（macOS）主题已就位，`git ls-tree` 与 `git -C themes/PaperMod log -1` 都指向 `1181196`，无需重拉。
+
+### 2.3 Dart Sass（只有写 SCSS 才需要）
+
+Hugo 0.170.0 移除了内置 LibSass，`toCSS` / `css.Sass` 改为调用**外部 Dart Sass**。用到 SCSS 时会报：
+
+```
+TOCSS-DART: failed to transform "/x.scss" ... You need to install Dart Sass
+```
+
+本站和 PaperMod 主题都**不用** SCSS（样式是普通 CSS，经 minify + fingerprint 处理），所以本机没装 Dart Sass 也能正常构建。将来要写 SCSS 再装，保证 `sass` 在 PATH 里：
+
+```zsh
+brew install sass/sass/sass    # 有 Homebrew 时
+npm i -g sass                  # 或用 npm 全局装
+```
+
 ---
 
 ## 3. 本地开发
@@ -99,14 +148,28 @@ cd C:\Users\yyc001\Desktop\dashaohuo\yyc001.github.io
 # 打开 http://localhost:1313
 ```
 
+macOS / zsh 等价命令：
+
+```zsh
+cd ~/pi-workspace/yyc001.github.io
+.tools/hugo/hugo server --buildDrafts --cacheDir "$PWD/.tools/hugo-cache"
+# 打开 http://localhost:1313；只想本机访问可加 --bind 127.0.0.1
+```
+
 - `--buildDrafts` 让你能看到 `draft: true` 的文章（**不加就看不到草稿**）
 - `--cacheDir` 是必须的，原因见 §7 坑 1
 - 改文件自动热更新，Ctrl+C 退出
+- 服务器开着时又跑了一次生产构建（`--cleanDestinationDir` 会清空 `public/`），Fast Render 模式下草稿可能返回 404；加 `--disableFastRender` 或重启 server 即可
 
 ### 生成静态文件
 
 ```powershell
 & .\.tools\hugo\hugo.exe --minify --destination ./public --cleanDestinationDir --cacheDir "$PWD\.tools\hugo-cache"
+```
+
+```zsh
+# macOS / zsh
+.tools/hugo/hugo --minify --destination ./public --cleanDestinationDir --cacheDir "$PWD/.tools/hugo-cache"
 ```
 
 `--minify` / `--destination ./public` 与 CI 保持一致，这样本地看到的就是线上效果。产物在 `public/`，已被 gitignore。
@@ -232,6 +295,8 @@ git push origin source
 
 CI 用 `hugo-version: 'latest'`，意味着 **Hugo 每次发版都可能悄悄改变构建行为**。历史上已经因此炸过一次（Hugo 0.156.0 移除 `site.Author` 导致主题的 `rss.xml` 报错，见 §7 坑 4）。如果哪天推送后 Actions 失败，优先怀疑这个。想彻底稳住，可以把 workflow 里的 `latest` 改成固定版本号（例如 `'0.170.1'`），并和本地保持一致。
 
+另外，**0.170.0 起 extended 版已取消**（§7 坑 10），`extended: true` 目前靠官方保留的 `hugo_extended_*` 兼容别名才能下载成功；哪天别名停发，这一步会直接 404。固定版本时顺手把 `extended: true` 删掉更稳。
+
 ---
 
 ## 7. 已踩过的坑
@@ -303,6 +368,27 @@ node -e "const fs=require('fs');fetch(process.argv[1]).then(r=>r.arrayBuffer()).
 
 仓库的 `core.autocrlf` 归一化行为，不影响文件内容，忽略即可。
 
+### 坑 9：`github.com` 443 连接超时，但 `api.github.com` 正常
+
+**现象**：`curl -L` 下载 release 卡约 75 秒后报 `Failed to connect to github.com port 443`；同一时间 `api.github.com` 能正常返回 200。
+
+**原因**：当前网络 / 沙箱只放通了部分 GitHub 域名 —— `api.github.com`、`codeload.github.com` 可达，`github.com`、`raw.githubusercontent.com` 不通。
+
+**解决**：release 下载走加速代理，把原始 URL 直接拼在代理域名后面：
+
+```zsh
+curl -sSL -o hugo.pkg \
+  "https://ghfast.top/https://github.com/gohugoio/hugo/releases/download/v0.170.1/hugo_0.170.1_darwin-universal.pkg"
+```
+
+`ghproxy.net`、`gh-proxy.com` 也可用（实测支持 Range 断点续传）。**代理内容不可信，务必拿官方 `checksums.txt` 校验 sha256**（见 §2.1）。仓库源码可用 `codeload.github.com/<owner>/<repo>/tar.gz/<ref>` 直取。
+
+### 坑 10：`hugo version` 不再显示 `+extended`（Hugo 0.170 起）
+
+**原因**：0.170.0 取消了 extended 版，LibSass 被移除，官方只发一个二进制；`hugo.IsExtended` 恒为 `false`，`hugoVersion.extended` 配置也失效。
+
+**影响**：workflow 里的 `extended: true` 只是兼容旧写法的残留（官方暂时保留 `hugo_extended_*` 别名），本地用标准包即可。**SCSS 需另装 Dart Sass**，否则 `toCSS` 报 `TOCSS-DART ... You need to install Dart Sass`（见 §2.3）。本站不用 SCSS，不受影响。
+
 ---
 
 ## 8. 维护清单
@@ -320,7 +406,7 @@ git add themes/PaperMod          # 记录新的 gitlink
 
 ### 升级 Hugo
 
-改 `.tools/hugo/` 下的二进制即可，同样要在本地构建验证一遍。
+改 `.tools/hugo/` 下的二进制即可，同样要在本地构建验证一遍。macOS 按 §2.1 的 `.pkg` 流程换 `ver` 重装。
 
 ### 已知遗留问题
 
@@ -343,5 +429,21 @@ $cache = "$PWD\.tools\hugo-cache"
 
 git ls-tree HEAD themes/PaperMod                                # 看主题固定版本
 git submodule status                                            # 看主题状态（沙箱内会失败）
+git push origin source                                          # 触发部署
+```
+
+macOS / zsh 版：
+
+```zsh
+hugo=".tools/hugo/hugo"
+cache="$PWD/.tools/hugo-cache"
+
+$hugo server --buildDrafts --cacheDir "$cache"                  # 本地预览 http://localhost:1313
+$hugo --minify --destination ./public --cleanDestinationDir --cacheDir "$cache"
+$hugo new content posts/new-post.md                             # 新建文章
+$hugo version                                                   # 查版本（无 +extended 属正常）
+
+git ls-tree HEAD themes/PaperMod                                # 看主题固定版本
+git -C themes/PaperMod log -1 --oneline                         # 看主题当前 commit
 git push origin source                                          # 触发部署
 ```

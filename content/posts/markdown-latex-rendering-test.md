@@ -24,7 +24,7 @@ description: '一篇逐项验收 Markdown 排版与 KaTeX 公式渲染的测试�
 weight: 1
 
 # 展示控制
-showToc: true
+showToc: false
 TocOpen: true
 hidemeta: false
 comments: true
@@ -48,7 +48,7 @@ editPost:
 
 > 这篇文章是一次“渲染验收”：每一节只放一类语法，发布后逐段对照，就能确认 Hugo、PaperMod 和 KaTeX 都还在正常工作。
 >
-> 公式依赖 front matter 里的 `math: true`，本页已开启。更偏“公式怎么写”的示例在同目录的 [数学公式排版示例](/posts/math-formula-demo/)。
+> 公式依赖 front matter 里的 `math: true`，本页已开启。
 
 ## 一、标题层级
 
